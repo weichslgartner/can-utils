@@ -424,7 +424,6 @@ int main(int argc, char **argv)
 	static char base; /* 'd'ec or 'h'ex */
 	static char timestamps; /* 'a'bsolute or 'r'elative */
 	int opt;
-	//while (__AFL_LOOP(10000)){
 	while ((opt = getopt(argc, argv, "I:O:v?")) != -1) {
 		switch (opt) {
 		case 'I':
