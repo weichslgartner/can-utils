@@ -563,16 +563,26 @@ static const char *protocol_violation_locations[] = {
 static int snprintf_error_data(char *buf, size_t len, uint8_t err,
 			       const char **arr, int arr_len)
 {
-	int i, n = 0, count = 0;
+	int i, n = 0, tmp_n = 0, count = 0;
 
 	if (!err || len <= 0)
 		return 0;
 
 	for (i = 0; i < arr_len; i++) {
 		if (err & (1 << i)) {
-			if (count)
-				n += snprintf(buf + n, len - n, ",");
-			n += snprintf(buf + n, len - n, "%s", arr[i]);
+			if (count){
+				/* Fix for potential buffer overflow https://lgtm.com/rules/1505913226124/ */
+				tmp_n = snprintf(buf + n, len - n, ",");
+				if (tmp_n < 0 || tmp_n >= len - n){
+					return n;
+				}
+				n += tmp_n;
+			}
+			tmp_n = snprintf(buf + n, len - n, "%s", arr[i]);
+			if (tmp_n < 0 || tmp_n >= len - n){
+				return n;
+			}
+			n += tmp_n;
 			count++;
 		}
 	}
@@ -628,7 +638,7 @@ void snprintf_can_error_frame(char *buf, size_t len, const struct canfd_frame *c
                   const char* sep)
 {
 	canid_t class, mask;
-	int i, n = 0, classes = 0;
+	int i, n = 0, tmp_n = 0, classes = 0;
 	char *defsep = ",";
 
 	if (!(cf->can_id & CAN_ERR_FLAG))
@@ -646,9 +656,19 @@ void snprintf_can_error_frame(char *buf, size_t len, const struct canfd_frame *c
 	for (i = 0; i < (int)ARRAY_SIZE(error_classes); i++) {
 		mask = 1 << i;
 		if (class & mask) {
-			if (classes)
-				n += snprintf(buf + n, len - n, "%s", sep);
-			n += snprintf(buf + n, len - n, "%s", error_classes[i]);
+			if (classes){
+				/* Fix for potential buffer overflow https://lgtm.com/rules/1505913226124/ */
+				tmp_n = snprintf(buf + n, len - n, "%s", sep);
+				if (tmp_n < 0 || tmp_n >= len - n){
+					return;
+				}
+				n += tmp_n;
+			}
+			tmp_n = snprintf(buf + n, len - n, "%s", error_classes[i]);
+			if (tmp_n < 0 || tmp_n >= len - n){
+				return;
+			}
+			n += tmp_n;
 			if (mask == CAN_ERR_LOSTARB)
 				n += snprintf_error_lostarb(buf + n, len - n,
 							   cf);
