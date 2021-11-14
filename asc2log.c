@@ -50,6 +50,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include <linux/can.h>
 #include <linux/can/error.h>
@@ -182,6 +183,13 @@ void eval_can(char* buf, struct timeval *date_tvp, char timestamps, char base, i
 		if (strlen(dir) != 2) /* "Rx" or "Tx" */
 			return;
 
+		/* check for signed integer overflow */
+		if (dplace == 4 && read_tv.tv_usec >= INT_MAX/100)
+			return;
+
+		if (dplace == 5 && read_tv.tv_usec >= INT_MAX/10)
+			return;
+
 		if (dir[0] == 'R')
 			extra_info = " R\n";
 		else
@@ -262,6 +270,10 @@ void eval_canfd(char* buf, struct timeval *date_tvp, char timestamps, int dplace
 		return;
 
 	if (strlen(dir) != 2) /* "Rx" or "Tx" */
+		return;
+
+	/* check for signed integer overflow */
+	if (dplace == 4 && read_tv.tv_usec >= INT_MAX/100)
 		return;
 
 	if (dir[0] == 'R')
@@ -412,7 +424,7 @@ int main(int argc, char **argv)
 	static char base; /* 'd'ec or 'h'ex */
 	static char timestamps; /* 'a'bsolute or 'r'elative */
 	int opt;
-
+	//while (__AFL_LOOP(10000)){
 	while ((opt = getopt(argc, argv, "I:O:v?")) != -1) {
 		switch (opt) {
 		case 'I':

@@ -184,6 +184,8 @@ int parse_canframe(char *cs, struct canfd_frame *cf) {
 		for (i=0; i<8; i++){
 			if ((tmp = asc2nibble(cs[i])) > 0x0F)
 				return 0;
+
+			/* casting tmp to canid_t to perform left shift of 28 */
 			cf->can_id |= ((canid_t)tmp << (7-i)*4);
 		}
 		if (!(cf->can_id & CAN_ERR_FLAG)) /* 8 digits but no errorframe?  */
