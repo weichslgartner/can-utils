@@ -184,7 +184,7 @@ int parse_canframe(char *cs, struct canfd_frame *cf) {
 		for (i=0; i<8; i++){
 			if ((tmp = asc2nibble(cs[i])) > 0x0F)
 				return 0;
-			cf->can_id |= (tmp << (7-i)*4);
+			cf->can_id |= ((canid_t)tmp << (7-i)*4);
 		}
 		if (!(cf->can_id & CAN_ERR_FLAG)) /* 8 digits but no errorframe?  */
 			cf->can_id |= CAN_EFF_FLAG;   /* then it is an extended frame */
